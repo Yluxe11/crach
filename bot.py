@@ -1,48 +1,46 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
-# 1. تحميل البيانات
-data = pd.read_csv("crash_data.csv")  # تأكد من وضع اسم الملف الصحيح
+# ضع الـ API Token الخاص بك هنا
+API_TOKEN = '8073238511:AAErQnp5OJNNMhPj-_-U2sUscsIe3_t2qcc'
 
-# عرض البيانات
-print("بيانات اللعبة:")
-print(data.head())
+# 1. تعريف أمر البدء
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("مرحبًا بك! أنا بوت Telegram جاهز للمساعدة. 😊")
 
-# 2. تجهيز المدخلات والمخرجات
-X = data[['Round']]  # الجولات
-y = data['Multiplier']  # المضاعف
+# 2. تعريف أمر مخصص
+def help_command(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("الأوامر المتاحة:\n/start - بدء المحادثة\n/help - المساعدة")
 
-# 3. تقسيم البيانات إلى تدريب واختبار
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# 3. وظيفة للتنبؤ (كمثال)
+def predict(update: Update, context: CallbackContext) -> None:
+    # جلب الأرقام التي أرسلها المستخدم
+    if context.args:
+        try:
+            round_number = int(context.args[0])
+            # هنا مكان مناداة النموذج لتوقع النتيجة (كمثال)
+            prediction = f"x{round_number * 1.5:.2f}"  # مثال على توقع وهمي
+            update.message.reply_text(f"التوقع للجولة {round_number}: {prediction}")
+        except ValueError:
+            update.message.reply_text("الرجاء إدخال رقم صحيح.")
+    else:
+        update.message.reply_text("الرجاء إرسال رقم الجولة بعد الأمر. مثال: /predict 101")
 
-# 4. إنشاء النموذج
-model = LinearRegression()
+# 4. إعداد البوت
+def main():
+    # إعداد Updater
+    updater = Updater(API_TOKEN)
 
-# تدريب النموذج
-model.fit(X_train, y_train)
+    # إضافة الأوامر
+    dispatcher = updater.dispatcher
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("predict", predict))
 
-# 5. التنبؤ
-y_pred = model.predict(X_test)
+    # تشغيل البوت
+    updater.start_polling()
+    print("البوت يعمل الآن 🚀")
+    updater.idle()
 
-# 6. تقييم الأداء
-mse = mean_squared_error(y_test, y_pred)
-print(f"متوسط الخطأ: {mse:.2f}")
-
-# 7. عرض النتائج
-plt.scatter(X_test, y_test, color='blue', label='Actual')
-plt.plot(X_test, y_pred, color='red', label='Predicted')
-plt.xlabel('Round')
-plt.ylabel('Multiplier')
-plt.title('Crash Multiplier Prediction')
-plt.legend()
-plt.show()
-
-# 8. التنبؤ بالجولات المستقبلية
-new_rounds = np.array([[101], [102], [103]])  # أمثلة على الجولات المستقبلية
-predictions = model.predict(new_rounds)
-for round_num, pred in zip(new_rounds.flatten(), predictions):
-    print(f"التوقع للجولة {round_num}: x{pred:.2f}")
+if __name__ == '__main__':
+    main()
